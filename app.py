@@ -56,17 +56,18 @@ def extract_images_and_text_from_pdf(pdf_file):
 def model_response(raw_text, jd):
     model = genai.GenerativeModel("gemini-pro")
 
-    promt_for_row_text = f"I will provide a raw text which is extracted from a candidates resume pdf using PyPDF2, now candidate might wirten resume in coloumn structure or in a row structure, so the extracted text might not have proper information in sequential mennar, your task is to analyse all text, structe all this text proparlly like put skills togather , experience togather and all the relavent information with each other togather, Note: you will not do any creativity, you will not add any extra text appart from spelling correction, in response just retutn the formated text , no extra text from you should be added, no text should be deleted from you,  here is the resume text: {raw_text}"
+    promt_for_row_text = f"I will provide a raw text which is extracted from a candidates resume pdf using PyPDF2, now candidate might wirten resume in coloumner structure or in a row structure, so the extracted text might not have proper information in sequential mennar, your task is to analyse all text, structe all this text proparlly like put skills togather , experience togather and all the relavent information with each other togather, Note: you will not do any creativity, you will not add any extra text appart from spelling correction, in response just retutn the formated text , no extra text from you should be added, no text should be deleted from you,  here is the resume text: {raw_text}"
     formated_text = model.generate_content(promt_for_row_text).text
 
     prompt = (
         f"Act Like you are a skilled or very experience ATS(Application Tracking System)with a deep understanding of almost all tech field. Please analyze the following resume text and compare it with the job description provided"
         f"Note: resume text is formated using function try to match it job discription"
         f"Note: For counting how many percentage this profile matches with candidate keep following points in considreation (1)relavent field experience : 50% weight (2) relavent skill : 30% (3) soft-skills, certifications and other : 20%"
-        f"strictly provide following 3 details 1) how many percetage this candidate matche with job description 2)Missing skills of candidate according to job discription, title in header-3 3)a short summury in 30 to 40 words about candidates rillevent experience or schooing\n\n, title in header-3"
+        f"strictly provide following 3 details, it is required for further process 1) how many percetage this candidate matche with provided job description  2)Missing skills of candidate according to job discription 3)a short summury in 30 words about candidates rillevent experience or schooling(degree/phd/masters)\n\n"
         f"Resume text:\n{formated_text}\n\n"
         f"Job Description:\n{jd}\n\n"
-        f"provide the output as shown in example bellow format Percentage Match: 74%, Missing Skills:Backend, AWS, JIRA, Web Designing, Summary: 30 word summary about profile in basis of job discription, Candidate is good choice to take into considration(if score is >= 70%) or Candidate might not be good choice to take into considration(if score is <70%)"
+        f"provide the output as shown in bellow format Percentage Match: your caluculated perentage, Missing Skills: missing skill in this canidates resume text which is present in job decription, Summary: 30 word summary about profile in basis of job discription" 
+        f"Result: Candidate is good choice to take into considration(if score is >= 70%) or Candidate might not be good choice to take into considration(if score is <70%)"
     )
 
     response = model.generate_content(prompt)
