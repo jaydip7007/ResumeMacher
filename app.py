@@ -2,12 +2,10 @@ import streamlit as st
 import google.generativeai as genai
 import os
 import PyPDF2 
-import fitz
 import pytesseract
-from io import BytesIO
-from PIL import Image
+from pdf2image import convert_from_path
+import tempfile
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -28,22 +26,21 @@ def extract_text_from_pdf(uploaded_file):
         return ' '
 
 
-
 def extract_images_and_text_from_pdf(pdf_file):
     extracted_text = ""
     
     try:
-        pdf_document = fitz.open(stream=BytesIO(pdf_file.read()))
-        for page_index in range(len(pdf_document)):
-            page = pdf_document[page_index]  
-            image_list = page.get_images() 
-            for img_index, img in enumerate(image_list):
-                xref = img[0] 
-                base_image = pdf_document.extract_image(xref)  # extract the image
-                image_bytes = base_image["image"]     
-                image = Image.open(BytesIO(image_bytes))
-                image_text = pytesseract.image_to_string(image)
-                extracted_text += image_text + "\n"
+        # storing pdf in temp file due to convert_from_path function
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_pdf:
+            for chunk in pdf_file.chunks():
+                tmp_pdf.write(chunk)
+
+        images = convert_from_path(tmp_pdf.name)
+        for image in images: 
+            image_text = pytesseract.image_to_string(image,  lang='eng')
+            extracted_text += image_text + "\n"
+
+        os.unlink(tmp_pdf.name)
         return extracted_text
     
     except Exception as e:
@@ -89,14 +86,11 @@ submit = st.button("Submit")
 if submit:
     if uploaded_files is not None:
         for resume in uploaded_files:
-            text = ''
-            text_from_image = extract_images_and_text_from_pdf(resume)   
-            text_from_pdf = extract_text_from_pdf(resume)
+            text = '' 
+            text = extract_text_from_pdf(resume)
 
-            if len(text_from_image) > len(text_from_pdf):
-                text = text_from_image
-            else:
-                text = text_from_pdf
+            if len(text) < 30:
+                text = extract_images_and_text_from_pdf(resume)
 
             response = model_response(text, job_dis)
             st.subheader(resume.name)       
