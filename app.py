@@ -17,12 +17,15 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Function to extract text from a PDF file
 def extract_text_from_pdf(uploaded_file):
-    reader=PyPDF2.PdfReader(uploaded_file)
-    text = ""
-    for page in range(len(reader.pages)):
-        page = reader.pages[page]
-        text += str(page.extract_text())    
-    return text
+    try:
+        reader=PyPDF2.PdfReader(uploaded_file)
+        text = ""
+        for page in range(len(reader.pages)):
+            page = reader.pages[page]
+            text += str(page.extract_text())    
+        return text
+    except Exception as e:
+        return ' '
 
 
 
@@ -45,7 +48,7 @@ def extract_images_and_text_from_pdf(pdf_file):
     
     except Exception as e:
         print("Error occurred:", e)
-        return None
+        return " "
 
 
 
