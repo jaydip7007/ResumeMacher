@@ -74,7 +74,7 @@ def model_response(raw_text, jd):
 
 
 # front end 
-st.title("Resume Analyzer")
+st.title("Resume Analyzer........")
 st.text("Minimize Time to find a perfect candidate")
 job_dis = st.text_area("Job discription")
 uploaded_files = st.file_uploader("Upload resume", type="pdf", help="Please upload resume in pdf format only", accept_multiple_files=True)   
