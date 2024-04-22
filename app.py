@@ -27,28 +27,25 @@ def extract_text_from_pdf(uploaded_file):
 
 
 def extract_images_and_text_from_pdf(pdf_file):
-    extracted_text_list = []
-
-    pdf_data = pdf_file.read()
-    pdf_document = fitz.open(stream=BytesIO(pdf_data))
-
-    for page_number in range(pdf_document.page_count):
-        page = pdf_document.load_page(page_number)
-
-        images = page.get_images(full=True)
-
-        for img_index, img in enumerate(images):
-            xref = img[0]  # Image XREF identifier
-            base_image = pdf_document.extract_image(xref)
-            image_bytes = base_image["image"]
-            image = Image.open(BytesIO(image_bytes))
-
-            image_text = pytesseract.image_to_string(image)
-            extracted_text_list.append(image_text)
-
-    pdf_document.close()
-
-    return " ".join(extracted_text_list)
+    extracted_text = ""
+    
+    try:
+        pdf_document = fitz.open(stream=BytesIO(pdf_file.read()))
+        for page_index in range(len(pdf_document)):
+            page = pdf_document[page_index]  
+            image_list = page.get_images() 
+            for img_index, img in enumerate(image_list):
+                xref = img[0] 
+                base_image = pdf_document.extract_image(xref)  # extract the image
+                image_bytes = base_image["image"]     
+                image = Image.open(BytesIO(image_bytes))
+                image_text = pytesseract.image_to_string(image)
+                extracted_text += image_text + "\n"
+        return extracted_text
+    
+    except Exception as e:
+        print("Error occurred:", e)
+        return None
 
 
 
@@ -68,7 +65,7 @@ def model_response(raw_text, jd):
         f"Strictly provide the following three details for further processing: 1) The percentage match this candidate has with the provided job description according to the given conditions, 2) Extracted skills from the job description that are not present in the resume text, and 3) A short summary in 30 words about the candidate's relevant experience or education (degree/PhD/masters).\n\n"
         f"Resume text:\n{formated_text}\n\n"
         f"Job Description:\n{jd}\n\n"
-        f"Provide the output in the following format: Percentage Match: Calculated percentage, Missing Skills: Skills missing in this candidate's resume text but present in the job description, Summary: A concise 30-word summary of the candidate's profile based on the job description."
+        f"output must be in following format: Percentage Match: Calculated percentage, Missing Skills: Skills missing in this candidate's resume text but present in the job description, Summary: A concise 30-word summary of the candidate's profile based on the job description."
         f"Result: Determine whether the candidate is a good choice for consideration (if the score is >= 70%) or not (if the score is < 70%)."
     )
 
@@ -89,9 +86,15 @@ submit = st.button("Submit")
 if submit:
     if uploaded_files is not None:
         for resume in uploaded_files:
-            text = extract_text_from_pdf(resume)
-            if len(text) < 50:
-                text = extract_images_and_text_from_pdf(resume)    
+            text = ''
+            text_from_image = extract_images_and_text_from_pdf(resume)   
+            text_from_pdf = extract_text_from_pdf(resume)
+
+            if len(text_from_image) > len(text_from_pdf):
+                text = text_from_image
+            else:
+                text = text_from_pdf
+
             response = model_response(text, job_dis)
             st.subheader(resume.name)       
             st.write(response.text)
